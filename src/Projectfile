@@ -1,0 +1,3 @@
+deps do
+  github "TheBlueCrane/SDL2-Crystal"
+end

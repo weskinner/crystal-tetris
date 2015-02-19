@@ -111,7 +111,7 @@ static Tetromino_Movement CURRENT_TETROMINO;
 // Use row-major order convention to access (x,y) coord.
 // Origin is 'top-left' -- like matrices.
 // Zero-based indexing.
-static Color_Block playfield[PLAYFIELD_HEIGHT * PLAYFIELD_WIDTH];
+static Color_Block playfield[22 * 10];
 
 
 // Every time AUTO_DROP event is executed, the current tetromino will drop by one

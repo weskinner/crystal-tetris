@@ -22,7 +22,7 @@ static const short int BLOCK_SIZE = 20;
 static const short int PLAYFIELD_HEIGHT = 22;
 static const short int PLAYFIELD_WIDTH = 10;
 
-static const int WINDOW_HEIGHT = PLAYFIELD_HEIGHT * ( BLOCK_SIZE + 1) + 1;
-static const int WINDOW_WIDTH = PLAYFIELD_WIDTH * ( BLOCK_SIZE + 1) + 1;
+static const int WINDOW_HEIGHT = 22 * ( 20 + 1) + 1;
+static const int WINDOW_WIDTH = 22 * ( 20 + 1) + 1;
 
 #endif
