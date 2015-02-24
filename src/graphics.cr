@@ -1,3 +1,5 @@
+require "./lib_sdl2_gfx"
+
 module Tetris
   WINDOW_TITLE = "tetris-sdl-c"
 
@@ -48,6 +50,32 @@ module Tetris
       if @font == nil
         raise "\nTTF_OpenFont Error:  %s\n" + String.new(LibSDL2.get_error)
       end
+    end
+
+    def set_render_changed
+      @render_changed = true
+    end
+
+    def clear_background
+      LibSDL2.renderer_set_color(@render, 204_u8, 192_u8, 179_u8, 255_u8)
+      LibSDL2.renderer_clear(@render)
+    end
+
+    def draw_block(x, y, color)
+      # raise if x >= 0 && x < PLAYFIELD_WIDTH
+      # raise if y >= 0 && y < PLAYFIELD_HEIGHT
+
+      # top-left coords of block
+      x_tl = x * (BLOCK_SIZE + 1) + 1;
+      y_tl = y * (BLOCK_SIZE + 1) + 1;
+
+      # bottom-right coords of block
+      x_br = x_tl + BLOCK_SIZE;
+      y_br = y_tl + BLOCK_SIZE;
+
+      LibSDL2_GFX.box_color(@render as Void*, x_tl.to_i16, y_tl.to_i16, x_br.to_i16, y_br.to_i16, color);
+
+      set_render_changed 
     end
 
     def prerender
