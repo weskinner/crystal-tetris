@@ -50,6 +50,10 @@ module Tetris
       end
     end
 
+    def prerender
+      LibSDL2.set_render_target(@render, @display)
+    end
+
     def finalize
       LibSDL2.destroy_renderer(@render)
       LibSDL2.destroy_window(@window)
