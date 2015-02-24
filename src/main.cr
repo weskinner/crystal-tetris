@@ -34,12 +34,11 @@ SDL2.run LibSDL2::INIT_EVERYTHING do
     action = get_input
     quit = true if action == :quit
 
-    # update game
-
-    # render
+    tetris.update action
     graphics.update_render
 
     # etc
+    SDL2.delay 16_u32
   end
 
 
