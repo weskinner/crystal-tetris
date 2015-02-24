@@ -37,6 +37,7 @@ SDL2.run LibSDL2::INIT_EVERYTHING do
     # update game
 
     # render
+    graphics.update_render
 
     # etc
   end

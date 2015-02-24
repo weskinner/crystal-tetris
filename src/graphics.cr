@@ -52,6 +52,16 @@ module Tetris
       end
     end
 
+    def update_render
+      if @render_changed
+        LibSDL2.set_render_target(@render, nil)
+        LibSDL2.render_copy(@render, @display, nil, nil)
+
+        LibSDL2.renderer_present(@render)
+        @render_changed = false;
+      end
+    end
+
     def set_render_changed
       @render_changed = true
     end
