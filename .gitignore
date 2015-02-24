@@ -23,3 +23,7 @@
 *.hex
 
 tetris_toy
+*.swp
+.swp
+.crystal/
+libs/
