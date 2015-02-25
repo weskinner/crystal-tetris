@@ -106,7 +106,7 @@ module Tetris
 
     def update(@tetromino_action)
       if @cb_timer == 0
-        @cb_timer = LibSDL2.add_timer(500_u32, ->(interval, param) { return (param as Game).auto_drop_timer(interval) }, self as Void*)
+        @cb_timer = LibSDL2.add_timer(100_u32, ->(interval, param) { return (param as Game).auto_drop_timer(interval) }, self as Void*)
       end
 
       # // draw the scoreboard as needed
@@ -268,48 +268,52 @@ module Tetris
         set_playfield(_x, _y, @current_tetromino.type.color)
       end
 
-      # // clear lines if any
-      # uint8_t row = PLAYFIELD_HEIGHT;
-      # int8_t row_to_copy_to = -1;
+      row_to_copy_to = -1;
+      completed_lines = 0;
+      (PLAYFIELD_HEIGHT-1).downto(0) do |row|
+        complete_line = true;
+        # check if line is complete
+        (0...PLAYFIELD_WIDTH).each do |col|
+          if get_playfield(col, row) == ColorBlock::EMPTY
+            complete_line = false
+            break
+          end
+        end
 
-      # uint8_t completed_lines = 0;
+        #// clear line
+        #if(complete_line) {
 
-      # while(row --> 0) {
-      #     uint8_t col;
-      #     bool complete_line = true;
+        #    completed_lines++;
 
-      #     // check if line is complete
-      #     for(col = 0; col < PLAYFIELD_WIDTH; col++) {
-      #         if(get_playfield(col, row) == EMPTY) {
+        #    if(row_to_copy_to < row) {
+        #        row_to_copy_to = row;
+        #    }
 
-      #             complete_line = false;
-      #             break;
-      #         }
-      #     }
+        #    for(col = 0; col < PLAYFIELD_WIDTH; col++) {
+        #        set_playfield(col, row, EMPTY);
+        #    }
+        #} else if(row_to_copy_to > row) {
 
-      #     // clear line
-      #     if(complete_line) {
+        #    for(col = 0; col < PLAYFIELD_WIDTH; col++) {
+        #        set_playfield(col, row_to_copy_to, get_playfield(col, row));
+        #    }
 
-      #         completed_lines++;
+        #    row_to_copy_to--;
+        #}
+        if complete_line
+          completed_lines += 1
+          row_to_copy_to = row if row_to_copy_to < row
+          (0...PLAYFIELD_WIDTH).each do |col|
+            set_playfield(col, row, ColorBlock::EMPTY)
+          end
+        elsif row_to_copy_to > row
+          (0...PLAYFIELD_WIDTH).each do |col|
+            set_playfield(col, row_to_copy_to, get_playfield(col, row))
+          end
+          row_to_copy_to -= 1
+        end
 
-      #         if(row_to_copy_to < row) {
-      #             row_to_copy_to = row;
-      #         }
-
-      #         for(col = 0; col < PLAYFIELD_WIDTH; col++) {
-      #             set_playfield(col, row, EMPTY);
-      #         }
-
-      #     } else if(row_to_copy_to > row) {
-
-      #         for(col = 0; col < PLAYFIELD_WIDTH; col++) {
-      #             set_playfield(col, row_to_copy_to, get_playfield(col, row));
-      #         }
-
-      #         row_to_copy_to--;
-      #     }
-
-      # }
+      end
 
       # // update score
 
