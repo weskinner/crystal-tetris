@@ -54,6 +54,9 @@ module Tetris
       @tetromino_action = :none
       @current_tetromino_coords = Array(UInt8).new(8, 0_u8)
       @ghost_tetromino_coords = Array(UInt8).new(8, 0_u8)
+      @current_tetromino = TetrominoMovement.new Piece::TETRA_O, 0, 3, 0
+      @lock_delay_count = 0
+      @lock_delay_threshold = 2
     end
 
     def setup
@@ -77,7 +80,173 @@ module Tetris
       spawn_tetromino
     end
 
-    def update(action)
+    def auto_drop_timer(interval)
+      # SDL_Event event;
+      event = LibSDL2::Event.new
+      # SDL_UserEvent userevent;
+      userevent = LibSDL2::UserEvent.new
+
+      userevent.type = LibSDL2::USEREVENT;
+      userevent.code = 0;
+      userevent.data1 = Pointer(Void).null;
+      userevent.data2 = Pointer(Void).null;
+
+      event.type = LibSDL2::USEREVENT;
+      event.user = userevent;
+
+      # SDL_PushEvent(&event);
+      LibSDL2.push_event(pointerof(event))
+      interval
+    end
+
+    def update(@tetromino_action)
+      if @cb_timer == 0
+        @cb_timer = LibSDL2.add_timer(500_u32, ->(interval, param) { return (param as Game).auto_drop_timer(interval) }, self as Void*)
+      end
+
+      # // draw the scoreboard as needed
+      # int i = 4;
+      # bool on_score_area = false;
+      # while(i --> 0) {
+      #     uint8_t x_coord = i * 2;
+      #     uint8_t y_coord = x_coord + 1;
+
+      #     // uint8_t _x = CURRENT_TETROMINO_COORDS[x_coord];
+      #     uint8_t _y = CURRENT_TETROMINO_COORDS[y_coord];
+
+      #     // if a tetromino is within the top 3 rows of the playing field, redraw
+      #     // that area of the playing field.
+      #     // the third row is considered when the tetromino leaves the score area,
+      #     // it will clear the previous position.
+      #     if(_y <= 2) {
+      #         on_score_area = true;
+      #         break;
+      #     }
+      # }
+
+      # if(on_score_area) {
+
+      #     // re-draw playfield area where score is located in
+      #     int n = PLAYFIELD_WIDTH * 2 - 1;
+      #     while(n --> 0) {
+      #         int x = n % PLAYFIELD_WIDTH;
+      #         int y = n / PLAYFIELD_WIDTH;
+
+      #         set_playfield(x, y, get_playfield(x, y));
+      #     }
+
+      #     draw_playing_field();
+
+      #     // re-draw tetromino
+      #     render_current_tetromino(CURRENT_TETROMINO);
+
+      #     render_score();
+      # }
+
+
+
+      # Tetromino_Movement request = CURRENT_TETROMINO;
+      request = TetrominoMovement.new @current_tetromino
+
+      # // action from keyboard
+      # switch(TETROMINO_ACTION) {
+      case @tetromino_action
+      #     case NONE:
+      #         // do nothing - don't bother redrawing
+      #     break;
+      when :none
+
+      #     case ROTATE:
+      #         request.rotation = (request.rotation + 1) % 4;
+      #         render_current_tetromino(request);
+      #     break;
+      when :rotate
+        request.rotation = (request.rotation + 1) % 4
+        render_current_tetromino(request)
+
+      #     case LEFT:
+      #         request.x -= 1;
+      #         render_current_tetromino(request);
+      #     break;
+      when :left
+        request.x -= 1
+        render_current_tetromino(request)
+
+      #     case RIGHT:
+      #         request.x += 1;
+      #         render_current_tetromino(request);
+
+      #     break;
+      when :right
+        request.x += 1
+        render_current_tetromino(request)
+
+      #     case DROP:
+
+      #         request.y += 1;
+      #         while(render_current_tetromino(request))
+      #             request.y += 1;
+
+      #         lockTetromino();
+
+      #     break;
+      when :drop
+        request.y += 1
+        (request.y += 1) while render_current_tetromino(request)
+        lock_tetromino
+
+      #     case DOWN:
+      #         request.y += 1;
+      #         if(!render_current_tetromino(request)) {
+      #             lock_delay_count++;
+      #         } else {
+      #             lock_delay_count = 0;
+      #         }
+      #     break;
+      when :down
+        request.y += 1
+        unless render_current_tetromino(request)
+          @lock_delay_count += 1
+        else
+          @lock_delay_count = 0
+        end
+
+      #     case RESTART:
+      #         initTetris();
+      #     break;
+      when :restart
+        setup
+
+      #     case AUTO_DROP:
+
+      #         request.y += 1;
+      #         if (!render_current_tetromino(request)) {
+      #             lock_delay_count++;
+      #         } else {
+      #             lock_delay_count = 0;
+      #         }
+
+      #         if (lock_delay_count >= lock_delay_threshold) {
+      #             lockTetromino();
+      #         }
+
+      #     break;
+      when :auto_drop
+        request.y += 1
+        unless render_current_tetromino(request)
+          @lock_delay_count += 1
+        else
+          @lock_delay_count = 0
+        end
+
+        lock_tetromino if @lock_delay_count >= @lock_delay_threshold
+      end
+
+      @tetromino_action = :none
+    end
+
+    def lock_tetromino
+      #TODO
     end
 
     def draw_playing_field

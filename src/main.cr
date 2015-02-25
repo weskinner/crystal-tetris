@@ -17,8 +17,13 @@ def get_input
         when LibSDL2::Key::R; return :restart
         when LibSDL2::Key::SPACE; return :drop
         end
+      when LibSDL2::KEYUP
+        return :none
+      when LibSDL2::USEREVENT
+        return :auto_drop
       end
     end
+    return :none
 end
 
 SDL2.run LibSDL2::INIT_EVERYTHING do
