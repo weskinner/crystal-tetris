@@ -1,4 +1,5 @@
 require "SDL2-Crystal/sdl2"
+require "./lib_sdl2_ttf"
 require "./graphics"
 require "./game"
 
