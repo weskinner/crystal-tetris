@@ -10,6 +10,16 @@ module Tetris
     RED = 0xFF4B59F2_u32
   end
 
+  module Piece
+    TETRA_I = Tetromino.new [0x0F00, 0x2222, 0x00F0, 0x4444], ColorBlock::TEAL
+    TETRA_J = Tetromino.new [0x8E00, 0x6440, 0x0E20, 0x44C0], ColorBlock::BLUE
+    TETRA_L = Tetromino.new [0x2E00, 0x4460, 0x0E80, 0xC440], ColorBlock::ORANGE
+    TETRA_O = Tetromino.new [0x6600, 0x6600, 0x6600, 0x6600], ColorBlock::YELLOW
+    TETRA_S = Tetromino.new [0x6C00, 0x4620, 0x06C0, 0x8c40], ColorBlock::GREEN
+    TETRA_T = Tetromino.new [0x4E00, 0x4640, 0x0E40, 0x4C40], ColorBlock::PURPLE
+    TETRA_Z = Tetromino.new [0xC600, 0x2640, 0x0C60, 0x4C80], ColorBlock::RED
+  end
+
   class Tetromino
     property rotation
     property color
@@ -26,6 +36,13 @@ module Tetris
 
     def initialize(@type, @rotation, @x, @y)
     end
+    
+    def initialize(other)
+      @type = other.type
+      @rotation = other.rotation
+      @x = other.x
+      @y = other.y
+    end
   end
 
   class Game
@@ -35,6 +52,8 @@ module Tetris
       @tetromino_queue_size = 7
       @tetromino_queue = [] of Tetromino
       @tetromino_action = :none
+      @current_tetromino_coords = Array(UInt8).new(8, 0_u8)
+      @ghost_tetromino_coords = Array(UInt8).new(8, 0_u8)
     end
 
     def setup
@@ -59,11 +78,6 @@ module Tetris
     end
 
     def update(action)
-      tetro_s = [0x6C00_u16, 0x4620_u16, 0x06C0_u16, 0x8c40_u16]
-      tetromino = Tetromino.new tetro_s, ColorBlock::GREEN
-      request = TetrominoMovement.new tetromino, 0_u8, 4_u8, 3_u8
-      coords = Array(UInt8).new(8, 0_u8)
-      render_tetromino(request, coords)
     end
 
     def draw_playing_field
@@ -74,6 +88,40 @@ module Tetris
       end
 
       @graphics.set_render_changed
+    end
+
+    def render_current_tetromino(tetra_request)
+      ghost = tetra_request.type
+
+      #   change alpha to ~50%
+      ghost.color = ghost.color & 0x00FFFFFF;
+      ghost.color = ghost.color | 0x66000000;
+
+      ghost_request = TetrominoMovement.new tetra_request
+      ghost_request.type = ghost
+
+      #   render ghost tetromino
+      # while(render_tetromino(ghost_request, GHOST_TETROMINO_COORDS))
+      #     ghost_request.y += 1;
+      while render_tetromino(ghost_request, @ghost_tetromino_coords)
+        ghost_request.y += 1
+      end
+
+      #   change alpha to 90%
+      tetra_request.type.color = tetra_request.type.color & 0x00FFFFFF;
+      tetra_request.type.color = tetra_request.type.color | 0xE5000000;
+
+      # if(render_tetromino(tetra_request, CURRENT_TETROMINO_COORDS)) {
+      #     CURRENT_TETROMINO = tetra_request;
+
+      #     return true;
+      # }
+      if render_tetromino(tetra_request, @current_tetromino_coords)
+        @current_tetromino = tetra_request
+        return true
+      end
+
+      return false
     end
 
     #  render tetromino movement request
@@ -182,7 +230,53 @@ module Tetris
     end
 
     def spawn_tetromino
-      #TODO
+      # current_queue_index++;
+      # if(current_queue_index >= tetromino_queue_size) {
+      #     current_queue_index = 0;
+
+      #       apply shuffle algorithm
+      #     shuffle(tetromino_queue, tetromino_queue_size, sizeof(uint8_t));
+      # }
+
+      # Tetromino type;
+
+      # switch(tetromino_queue[current_queue_index]) {
+      #     case 1:
+      #         type = TETRA_I;
+      #     break;
+      #     case 2:
+      #         type = TETRA_J;
+      #     break;
+      #     case 3:
+      #         type = TETRA_L;
+      #     break;
+      #     case 4:
+      #         type = TETRA_O;
+      #     break;
+      #     case 5:
+      #         type = TETRA_S;
+      #     break;
+      #     case 6:
+      #         type = TETRA_T;
+      #     break;
+      #     case 7:
+      #         type = TETRA_Z;
+      #     break;
+      # }
+
+      # Tetromino_Movement tetra_request = {
+      #     type,
+      #     0,
+      #     3, 0
+      # };
+      tetra_request = TetrominoMovement.new Piece::TETRA_O, 0, 3, 0
+
+      # if(!render_current_tetromino(tetra_request)) {
+
+      #       Reset the game
+      #     initTetris();
+      # }
+      setup unless render_current_tetromino(tetra_request)
     end
 
     private def shuffle
