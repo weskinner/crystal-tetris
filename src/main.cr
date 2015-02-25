@@ -10,10 +10,10 @@ def get_input
       when LibSDL2::KEYDOWN
         case e.key.key_sym.sym
         when LibSDL2::Key::ESCAPE; return :quit
-        when LibSDL2::Key::DOWN; return :down
-        when LibSDL2::Key::RIGHT; return :right
-        when LibSDL2::Key::LEFT; return :left
-        when LibSDL2::Key::UP; return :rotate
+        when LibSDL2::Key::S; return :down
+        when LibSDL2::Key::D; return :right
+        when LibSDL2::Key::A; return :left
+        when LibSDL2::Key::W; return :rotate
         when LibSDL2::Key::R; return :restart
         when LibSDL2::Key::SPACE; return :drop
         end

@@ -169,7 +169,6 @@ module Tetris
       #         render_current_tetromino(request);
       #     break;
       when :left
-        puts "LEFT"
         request.x -= 1
         render_current_tetromino(request)
 
