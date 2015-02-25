@@ -26,6 +26,11 @@ module Tetris
 
     def initialize(@rotation, @color)
     end
+
+    def initialize(other)
+      @rotation = other.rotation
+      @color = other.color
+    end
   end
 
   class TetrominoMovement
@@ -257,6 +262,8 @@ module Tetris
 
         @current_tetromino_coords[x_coord] = 0_u8
         @current_tetromino_coords[y_coord] = 0_u8
+        @ghost_tetromino_coords[x_coord] = 0_u8
+        @ghost_tetromino_coords[y_coord] = 0_u8
  
         set_playfield(_x, _y, @current_tetromino.type.color)
       end
@@ -338,22 +345,21 @@ module Tetris
     end
 
     def render_current_tetromino(tetra_request)
-      #ghost = tetra_request.type
+      ghost = Tetromino.new tetra_request.type
 
-      ##   change alpha to ~50%
-      #ghost.color = ghost.color & 0x00FFFFFF;
-      #ghost.color = ghost.color | 0x66000000;
+      #   change alpha to ~50%
+      ghost.color = ghost.color & 0x00FFFFFF;
+      ghost.color = ghost.color | 0x66000000;
 
-      #ghost_request = TetrominoMovement.new tetra_request
-      #ghost_request.type = ghost
+      ghost_request = TetrominoMovement.new tetra_request
+      ghost_request.type = ghost
 
-      ##   render ghost tetromino
-      ## while(render_tetromino(ghost_request, GHOST_TETROMINO_COORDS))
-      ##     ghost_request.y += 1;
-      #ghost_tetromino_coords = Array(UInt8).new(8, 0_u8)
-      #while render_tetromino(ghost_request, ghost_tetromino_coords)
-      #  ghost_request.y += 1
-      #end
+      #   render ghost tetromino
+      # while(render_tetromino(ghost_request, GHOST_TETROMINO_COORDS))
+      #     ghost_request.y += 1;
+      while render_tetromino(ghost_request, @ghost_tetromino_coords)
+        ghost_request.y += 1
+      end
 
       #   change alpha to 90%
       tetra_request.type.color = tetra_request.type.color & 0x00FFFFFF;
