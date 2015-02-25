@@ -62,6 +62,7 @@ module Tetris
       @current_tetromino = TetrominoMovement.new Piece::TETRA_O, 0, 3, 0
       @lock_delay_count = 0
       @lock_delay_threshold = 2
+      @score = 0
     end
 
     def setup
@@ -85,129 +86,61 @@ module Tetris
       spawn_tetromino
     end
 
-    def auto_drop_timer(interval)
-      # SDL_Event event;
-      event = LibSDL2::Event.new
-      # SDL_UserEvent userevent;
-      userevent = LibSDL2::UserEvent.new
-
-      userevent.type = LibSDL2::USEREVENT;
-      userevent.code = 0;
-      userevent.data1 = Pointer(Void).null;
-      userevent.data2 = Pointer(Void).null;
-
-      event.type = LibSDL2::USEREVENT;
-      event.user = userevent;
-
-      # SDL_PushEvent(&event);
-      LibSDL2.push_event(pointerof(event))
-      interval
-    end
-
     def update(@tetromino_action)
       if @cb_timer == 0
         @cb_timer = LibSDL2.add_timer(100_u32, ->(interval, param) { return (param as Game).auto_drop_timer(interval) }, self as Void*)
       end
 
-      # // draw the scoreboard as needed
-      # int i = 4;
-      # bool on_score_area = false;
-      # while(i --> 0) {
-      #     uint8_t x_coord = i * 2;
-      #     uint8_t y_coord = x_coord + 1;
+      # draw the scoreboard as needed
+      on_score_area = false;
+      (0..3).each do |i|
+        x_coord = i * 2
+        y_coord = x_coord + 1
 
-      #     // uint8_t _x = CURRENT_TETROMINO_COORDS[x_coord];
-      #     uint8_t _y = CURRENT_TETROMINO_COORDS[y_coord];
+        _y = @current_tetromino_coords[y_coord]
+        if _y <= 2
+          on_score_area = true
+          break
+        end
+      end
 
-      #     // if a tetromino is within the top 3 rows of the playing field, redraw
-      #     // that area of the playing field.
-      #     // the third row is considered when the tetromino leaves the score area,
-      #     // it will clear the previous position.
-      #     if(_y <= 2) {
-      #         on_score_area = true;
-      #         break;
-      #     }
-      # }
+      if on_score_area
+        # re-draw playfield area where score is located in
+        (0..PLAYFIELD_WIDTH * 2 - 1).each do |n|
+          x = n % PLAYFIELD_WIDTH;
+          y = n / PLAYFIELD_WIDTH;
 
-      # if(on_score_area) {
+          set_playfield(x, y, get_playfield(x, y));
+        end
 
-      #     // re-draw playfield area where score is located in
-      #     int n = PLAYFIELD_WIDTH * 2 - 1;
-      #     while(n --> 0) {
-      #         int x = n % PLAYFIELD_WIDTH;
-      #         int y = n / PLAYFIELD_WIDTH;
+        draw_playing_field
 
-      #         set_playfield(x, y, get_playfield(x, y));
-      #     }
+        # re-draw tetromino
+        render_current_tetromino(@current_tetromino)
 
-      #     draw_playing_field();
-
-      #     // re-draw tetromino
-      #     render_current_tetromino(CURRENT_TETROMINO);
-
-      #     render_score();
-      # }
+        render_score
+      end
 
 
 
-      # Tetromino_Movement request = CURRENT_TETROMINO;
       request = TetrominoMovement.new @current_tetromino
 
-      # // action from keyboard
-      # switch(TETROMINO_ACTION) {
+      # action from keyboard
       case @tetromino_action
-      #     case NONE:
-      #         // do nothing - don't bother redrawing
-      #     break;
       when :none
-
-      #     case ROTATE:
-      #         request.rotation = (request.rotation + 1) % 4;
-      #         render_current_tetromino(request);
-      #     break;
       when :rotate
         request.rotation = (request.rotation + 1) % 4
         render_current_tetromino(request)
-
-      #     case LEFT:
-      #         request.x -= 1;
-      #         render_current_tetromino(request);
-      #     break;
       when :left
         request.x -= 1
         render_current_tetromino(request)
-
-      #     case RIGHT:
-      #         request.x += 1;
-      #         render_current_tetromino(request);
-
-      #     break;
       when :right
         request.x += 1
         render_current_tetromino(request)
-
-      #     case DROP:
-
-      #         request.y += 1;
-      #         while(render_current_tetromino(request))
-      #             request.y += 1;
-
-      #         lockTetromino();
-
-      #     break;
       when :drop
         request.y += 1
         (request.y += 1) while render_current_tetromino(request)
         lock_tetromino
-
-      #     case DOWN:
-      #         request.y += 1;
-      #         if(!render_current_tetromino(request)) {
-      #             lock_delay_count++;
-      #         } else {
-      #             lock_delay_count = 0;
-      #         }
-      #     break;
       when :down
         request.y += 1
         unless render_current_tetromino(request)
@@ -215,27 +148,8 @@ module Tetris
         else
           @lock_delay_count = 0
         end
-
-      #     case RESTART:
-      #         initTetris();
-      #     break;
       when :restart
         setup
-
-      #     case AUTO_DROP:
-
-      #         request.y += 1;
-      #         if (!render_current_tetromino(request)) {
-      #             lock_delay_count++;
-      #         } else {
-      #             lock_delay_count = 0;
-      #         }
-
-      #         if (lock_delay_count >= lock_delay_threshold) {
-      #             lockTetromino();
-      #         }
-
-      #     break;
       when :auto_drop
         request.y += 1
         unless render_current_tetromino(request)
@@ -280,26 +194,7 @@ module Tetris
           end
         end
 
-        #// clear line
-        #if(complete_line) {
-
-        #    completed_lines++;
-
-        #    if(row_to_copy_to < row) {
-        #        row_to_copy_to = row;
-        #    }
-
-        #    for(col = 0; col < PLAYFIELD_WIDTH; col++) {
-        #        set_playfield(col, row, EMPTY);
-        #    }
-        #} else if(row_to_copy_to > row) {
-
-        #    for(col = 0; col < PLAYFIELD_WIDTH; col++) {
-        #        set_playfield(col, row_to_copy_to, get_playfield(col, row));
-        #    }
-
-        #    row_to_copy_to--;
-        #}
+        # clear line
         if complete_line
           completed_lines += 1
           row_to_copy_to = row if row_to_copy_to < row
@@ -312,27 +207,25 @@ module Tetris
           end
           row_to_copy_to -= 1
         end
-
       end
 
-      # // update score
+      # update score
+      if completed_lines > 0
+        # tetris
+        @score += completed_lines/4 * 800;
+        completed_lines = completed_lines % 4;
 
-      # if(completed_lines > 0) {
-      #     // tetris
-      #     score += completed_lines/4 * 800;
-      #     completed_lines = completed_lines % 4;
+        # triple
+        @score += completed_lines/3 * 500;
+        completed_lines = completed_lines % 3;
 
-      #     // triple
-      #     score += completed_lines/3 * 500;
-      #     completed_lines = completed_lines % 3;
+        # double
+        @score += completed_lines/2 * 300;
+        completed_lines = completed_lines % 2;
 
-      #     // double
-      #     score += completed_lines/2 * 300;
-      #     completed_lines = completed_lines % 2;
-
-      #     // single
-      #     score += completed_lines * 100;
-      # }
+        # single
+        @score += completed_lines * 100;
+      end
 
 
       spawn_tetromino
@@ -341,39 +234,54 @@ module Tetris
     def draw_playing_field
       @graphics.clear_background
 
-      ((PLAYFIELD_HEIGHT * PLAYFIELD_WIDTH)-1..0).each do |i|
+      ((PLAYFIELD_HEIGHT * PLAYFIELD_WIDTH)-1).downto(0) do |i|
         set_playfield(i % PLAYFIELD_WIDTH, i / PLAYFIELD_WIDTH, @playfield[i])
       end
 
       @graphics.set_render_changed
     end
 
+    def render_score
+      # Show tetris score after all tetris operations are finished
+      text_color = LibSDL2::Color.new(r: 0x11_u8, g: 0x1F_u8, b: 0x3F_u8)
+      text_surface = LibSDL2_TTF.render_text_blended(@graphics.font, @score.to_s, text_color)
+      raise "TTF_Render Error #{LibSDL2.get_error}" if text_surface == nil
+
+      mtexture = LibSDL2.create_texture_from_surface(@graphics.render, text_surface)
+      raise "SDL_CreateTextureFromSurface Error #{LibSDL2.get_error}" if mtexture == nil
+
+      mWidth = text_surface.value.w;
+      mHeight = text_surface.value.h;
+
+      LibSDL2.free_surface(text_surface)
+
+      # render text
+      renderQuad = LibSDL2::Rect.new(x: (WINDOW_WIDTH - mWidth - 10).to_i16, y: 10_i16, w: mWidth.to_u16, h: mHeight.to_u16)
+
+      LibSDL2.render_copy_ex(@graphics.render, mtexture, nil, pointerof(renderQuad), 0_f64, nil, LibSDL2::FLIP_NONE);
+
+      LibSDL2.destroy_texture(mtexture)
+    end
+
     def render_current_tetromino(tetra_request)
       ghost = Tetromino.new tetra_request.type
 
-      #   change alpha to ~50%
+      # change alpha to ~50%
       ghost.color = ghost.color & 0x00FFFFFF;
       ghost.color = ghost.color | 0x66000000;
 
       ghost_request = TetrominoMovement.new tetra_request
       ghost_request.type = ghost
 
-      #   render ghost tetromino
-      # while(render_tetromino(ghost_request, GHOST_TETROMINO_COORDS))
-      #     ghost_request.y += 1;
+      # render ghost tetromino
       while render_tetromino(ghost_request, @ghost_tetromino_coords)
         ghost_request.y += 1
       end
 
-      #   change alpha to 90%
+      # change alpha to 90%
       tetra_request.type.color = tetra_request.type.color & 0x00FFFFFF;
       tetra_request.type.color = tetra_request.type.color | 0xE5000000;
 
-      # if(render_tetromino(tetra_request, CURRENT_TETROMINO_COORDS)) {
-      #     CURRENT_TETROMINO = tetra_request;
-
-      #     return true;
-      # }
       if render_tetromino(tetra_request, @current_tetromino_coords)
         @current_tetromino = tetra_request
         return true
@@ -406,7 +314,6 @@ module Tetris
         @graphics.draw_block(_x, _y, ColorBlock::EMPTY)
       end
 
-
       #  render new tetromino blocks
       (0..3).each do |i|
         x_coord = i * 2
@@ -423,6 +330,22 @@ module Tetris
       end
 
       return true
+    end
+
+    def auto_drop_timer(interval)
+      event = LibSDL2::Event.new
+      userevent = LibSDL2::UserEvent.new
+
+      userevent.type = LibSDL2::USEREVENT;
+      userevent.code = 0;
+      userevent.data1 = Pointer(Void).null;
+      userevent.data2 = Pointer(Void).null;
+
+      event.type = LibSDL2::USEREVENT;
+      event.user = userevent;
+
+      LibSDL2.push_event(pointerof(event))
+      interval
     end
 
     private def get_playfield(x, y)
@@ -446,12 +369,6 @@ module Tetris
       i = 0
       bit = 0x8000_u16
       while bit > 0 && i < 8
-        # piece_string = ("%016s" % piece.to_s(2))
-        # bit_string = ("%016s" % bit.to_s(2))
-        # puts "piece: #{piece_string}"
-        # puts "bit:   #{bit_string}"
-        # puts row
-        # puts col
         if (piece & bit) != 0
             _x = (x + col).to_u8
             _y = (y + row).to_u8
@@ -496,6 +413,7 @@ module Tetris
       # }
 
       # Tetromino type;
+      type = Piece::TETRA_O
 
       # switch(tetromino_queue[current_queue_index]) {
       #     case 1:
@@ -520,13 +438,29 @@ module Tetris
       #         type = TETRA_Z;
       #     break;
       # }
+      case (1..7).to_a.sample
+      when 1
+        type = Piece::TETRA_I
+      when 2
+        type = Piece::TETRA_J
+      when 3
+        type = Piece::TETRA_L
+      when 4
+        type = Piece::TETRA_O
+      when 5
+        type = Piece::TETRA_S
+      when 6
+        type = Piece::TETRA_T
+      when 7
+        type = Piece::TETRA_Z
+      end
 
       # Tetromino_Movement tetra_request = {
       #     type,
       #     0,
       #     3, 0
       # };
-      tetra_request = TetrominoMovement.new Piece::TETRA_O, 0, 3, 0
+      tetra_request = TetrominoMovement.new type, 0, 3, 0
 
       # if(!render_current_tetromino(tetra_request)) {
 

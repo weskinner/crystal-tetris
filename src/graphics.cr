@@ -14,6 +14,9 @@ module Tetris
   WINDOW_WIDTH = 22 * ( 20 + 1) + 1
 
   class Graphics
+    property font
+    property render
+
     def initialize
       @render_changed = false
 
