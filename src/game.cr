@@ -233,6 +233,7 @@ module Tetris
       #     break;
       when :auto_drop
         request.y += 1
+        puts request.y
         unless render_current_tetromino(request)
           @lock_delay_count += 1
         else
