@@ -66,6 +66,7 @@ module Tetris
     end
 
     def setup
+      puts "setup called"
       # set up SDL timer
       LibSDL2.remove_timer(@cb_timer) unless @cb_timer == 0
       @cb_timer = 0
@@ -73,7 +74,7 @@ module Tetris
       @tetromino_action = :none;
 
       # Empty the playfield
-      ((PLAYFIELD_HEIGHT * PLAYFIELD_WIDTH)-1..0).each do |i|
+      ((PLAYFIELD_HEIGHT * PLAYFIELD_WIDTH)-1).downto(0) do |i|
         @playfield[i] = ColorBlock::EMPTY
       end
 
