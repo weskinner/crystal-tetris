@@ -246,7 +246,85 @@ module Tetris
     end
 
     def lock_tetromino
-      #TODO
+      @lock_delay_count = 0
+
+      (0..3).each do |i|
+        x_coord = i * 2
+        y_coord = x_coord + 1
+
+        _x = @current_tetromino_coords[x_coord]
+        _y = @current_tetromino_coords[y_coord]
+
+        @current_tetromino_coords[x_coord] = 0_u8
+        @current_tetromino_coords[y_coord] = 0_u8
+ 
+        set_playfield(_x, _y, @current_tetromino.type.color)
+      end
+
+      # // clear lines if any
+      # uint8_t row = PLAYFIELD_HEIGHT;
+      # int8_t row_to_copy_to = -1;
+
+      # uint8_t completed_lines = 0;
+
+      # while(row --> 0) {
+      #     uint8_t col;
+      #     bool complete_line = true;
+
+      #     // check if line is complete
+      #     for(col = 0; col < PLAYFIELD_WIDTH; col++) {
+      #         if(get_playfield(col, row) == EMPTY) {
+
+      #             complete_line = false;
+      #             break;
+      #         }
+      #     }
+
+      #     // clear line
+      #     if(complete_line) {
+
+      #         completed_lines++;
+
+      #         if(row_to_copy_to < row) {
+      #             row_to_copy_to = row;
+      #         }
+
+      #         for(col = 0; col < PLAYFIELD_WIDTH; col++) {
+      #             set_playfield(col, row, EMPTY);
+      #         }
+
+      #     } else if(row_to_copy_to > row) {
+
+      #         for(col = 0; col < PLAYFIELD_WIDTH; col++) {
+      #             set_playfield(col, row_to_copy_to, get_playfield(col, row));
+      #         }
+
+      #         row_to_copy_to--;
+      #     }
+
+      # }
+
+      # // update score
+
+      # if(completed_lines > 0) {
+      #     // tetris
+      #     score += completed_lines/4 * 800;
+      #     completed_lines = completed_lines % 4;
+
+      #     // triple
+      #     score += completed_lines/3 * 500;
+      #     completed_lines = completed_lines % 3;
+
+      #     // double
+      #     score += completed_lines/2 * 300;
+      #     completed_lines = completed_lines % 2;
+
+      #     // single
+      #     score += completed_lines * 100;
+      # }
+
+
+      spawn_tetromino
     end
 
     def draw_playing_field
@@ -260,21 +338,22 @@ module Tetris
     end
 
     def render_current_tetromino(tetra_request)
-      ghost = tetra_request.type
+      #ghost = tetra_request.type
 
-      #   change alpha to ~50%
-      ghost.color = ghost.color & 0x00FFFFFF;
-      ghost.color = ghost.color | 0x66000000;
+      ##   change alpha to ~50%
+      #ghost.color = ghost.color & 0x00FFFFFF;
+      #ghost.color = ghost.color | 0x66000000;
 
-      ghost_request = TetrominoMovement.new tetra_request
-      ghost_request.type = ghost
+      #ghost_request = TetrominoMovement.new tetra_request
+      #ghost_request.type = ghost
 
-      #   render ghost tetromino
-      # while(render_tetromino(ghost_request, GHOST_TETROMINO_COORDS))
-      #     ghost_request.y += 1;
-      while render_tetromino(ghost_request, @ghost_tetromino_coords)
-        ghost_request.y += 1
-      end
+      ##   render ghost tetromino
+      ## while(render_tetromino(ghost_request, GHOST_TETROMINO_COORDS))
+      ##     ghost_request.y += 1;
+      #ghost_tetromino_coords = Array(UInt8).new(8, 0_u8)
+      #while render_tetromino(ghost_request, ghost_tetromino_coords)
+      #  ghost_request.y += 1
+      #end
 
       #   change alpha to 90%
       tetra_request.type.color = tetra_request.type.color & 0x00FFFFFF;
