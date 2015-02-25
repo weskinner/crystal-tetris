@@ -76,14 +76,14 @@ module Tetris
       # raise if y >= 0 && y < PLAYFIELD_HEIGHT
 
       # top-left coords of block
-      x_tl = x * (BLOCK_SIZE + 1) + 1;
-      y_tl = y * (BLOCK_SIZE + 1) + 1;
+      x_tl = x.to_i16 * (BLOCK_SIZE + 1) + 1;
+      y_tl = y.to_i16 * (BLOCK_SIZE + 1) + 1;
 
       # bottom-right coords of block
       x_br = x_tl + BLOCK_SIZE;
       y_br = y_tl + BLOCK_SIZE;
 
-      LibSDL2_GFX.box_color(@render as Void*, x_tl.to_i16, y_tl.to_i16, x_br.to_i16, y_br.to_i16, color);
+      LibSDL2_GFX.box_color(@render as Void*, x_tl, y_tl, x_br, y_br, color);
 
       set_render_changed 
     end

@@ -233,7 +233,6 @@ module Tetris
       #     break;
       when :auto_drop
         request.y += 1
-        puts request.y
         unless render_current_tetromino(request)
           @lock_delay_count += 1
         else
@@ -261,21 +260,21 @@ module Tetris
     end
 
     def render_current_tetromino(tetra_request)
-      ghost = tetra_request.type
+      #ghost = tetra_request.type
 
-      #   change alpha to ~50%
-      ghost.color = ghost.color & 0x00FFFFFF;
-      ghost.color = ghost.color | 0x66000000;
+      ##   change alpha to ~50%
+      #ghost.color = ghost.color & 0x00FFFFFF;
+      #ghost.color = ghost.color | 0x66000000;
 
-      ghost_request = TetrominoMovement.new tetra_request
-      ghost_request.type = ghost
+      #ghost_request = TetrominoMovement.new tetra_request
+      #ghost_request.type = ghost
 
-      #   render ghost tetromino
-      # while(render_tetromino(ghost_request, GHOST_TETROMINO_COORDS))
-      #     ghost_request.y += 1;
-      while render_tetromino(ghost_request, @ghost_tetromino_coords)
-        ghost_request.y += 1
-      end
+      ##   render ghost tetromino
+      ## while(render_tetromino(ghost_request, GHOST_TETROMINO_COORDS))
+      ##     ghost_request.y += 1;
+      #while render_tetromino(ghost_request, @ghost_tetromino_coords)
+      #  ghost_request.y += 1
+      #end
 
       #   change alpha to 90%
       tetra_request.type.color = tetra_request.type.color & 0x00FFFFFF;
@@ -297,45 +296,44 @@ module Tetris
     #  render tetromino movement request
     #  returns true if tetromino is rendered succesfully; false otherwise
     def render_tetromino(tetra_request, current_coords)
+      #  simple 'queue' to store coords of blocks to render on playing field.
+      #  Each tetromino has 4 blocks with total of 4 coordinates.
+      # 
+      #  To access a coord, if 0 <= i < 4, then
+      #       x = i * 2, y = x + 1
+      # 
+      block_render_queue = Array(UInt8).new(8, 0_u8)
 
-        #  simple 'queue' to store coords of blocks to render on playing field.
-        #  Each tetromino has 4 blocks with total of 4 coordinates.
-        # 
-        #  To access a coord, if 0 <= i < 4, then
-        #       x = i * 2, y = x + 1
-        # 
-        block_render_queue = Array(UInt8).new(8, 0_u8)
+      return false unless can_render_tetromino(tetra_request, block_render_queue)
 
-        return false unless can_render_tetromino(tetra_request, block_render_queue)
+      #  clear old tetromino position
+      (0..3).each do |i|
+        x_coord = i * 2
+        y_coord = x_coord + 1
 
-        #  clear old tetromino position
-        (0..3).each do |i|
-          x_coord = i * 2;
-          y_coord = x_coord + 1;
+        _x = current_coords[x_coord]
+        _y = current_coords[y_coord]
 
-          _x = current_coords[x_coord];
-          _y = current_coords[y_coord];
-
-          @graphics.draw_block(_x, _y, ColorBlock::EMPTY);
-        end
+        @graphics.draw_block(_x, _y, ColorBlock::EMPTY)
+      end
 
 
-        #  render new tetromino blocks
-        (0..3).each do |i|
-          x_coord = i * 2;
-          y_coord = x_coord + 1;
+      #  render new tetromino blocks
+      (0..3).each do |i|
+        x_coord = i * 2
+        y_coord = x_coord + 1
 
-          #  store and draw new tetromino position
-          _x = block_render_queue[x_coord];
-          _y = block_render_queue[y_coord];
+        #  store and draw new tetromino position
+        _x = block_render_queue[x_coord]
+        _y = block_render_queue[y_coord]
 
-          current_coords[x_coord] = _x;
-          current_coords[y_coord] = _y;
+        current_coords[x_coord] = _x
+        current_coords[y_coord] = _y
 
-          @graphics.draw_block(_x, _y, tetra_request.type.color);
-        end
+        @graphics.draw_block(_x, _y, tetra_request.type.color)
+      end
 
-        return true;
+      return true
     end
 
     private def get_playfield(x, y)
