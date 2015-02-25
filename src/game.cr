@@ -256,7 +256,7 @@ module Tetris
       LibSDL2.free_surface(text_surface)
 
       # render text
-      renderQuad = LibSDL2::Rect.new(x: (WINDOW_WIDTH - mWidth - 10).to_i16, y: 10_i16, w: mWidth.to_u16, h: mHeight.to_u16)
+      renderQuad = LibSDL2::Rect.new(x: (WINDOW_WIDTH - mWidth - 10), y: 10, w: mWidth, h: mHeight)
 
       LibSDL2.render_copy_ex(@graphics.render, mtexture, nil, pointerof(renderQuad), 0_f64, nil, LibSDL2::FLIP_NONE);
 
