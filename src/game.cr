@@ -66,7 +66,6 @@ module Tetris
     end
 
     def setup
-      puts "setup called"
       # set up SDL timer
       LibSDL2.remove_timer(@cb_timer) unless @cb_timer == 0
       @cb_timer = 0
@@ -259,7 +258,7 @@ module Tetris
       # render text
       renderQuad = LibSDL2::Rect.new(x: (WINDOW_WIDTH - mWidth - 10), y: 10, w: mWidth, h: mHeight)
 
-      LibSDL2.render_copy_ex(@graphics.render, mtexture, nil, pointerof(renderQuad), 0_f64, nil, LibSDL2::FLIP_NONE);
+      LibSDL2.render_copy_ex(@graphics.render, mtexture, nil, pointerof(renderQuad), 0_f64, nil, RenderFlip::NONE);
 
       LibSDL2.destroy_texture(mtexture)
     end
@@ -337,12 +336,12 @@ module Tetris
       event = LibSDL2::Event.new
       userevent = LibSDL2::UserEvent.new
 
-      userevent.type = LibSDL2::USEREVENT;
+      userevent.type = EventType::USEREVENT;
       userevent.code = 0;
       userevent.data1 = Pointer(Void).null;
       userevent.data2 = Pointer(Void).null;
 
-      event.type = LibSDL2::USEREVENT;
+      event.type = EventType::USEREVENT;
       event.user = userevent;
 
       LibSDL2.push_event(pointerof(event))

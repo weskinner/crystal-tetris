@@ -1,5 +1,7 @@
 require "./lib_sdl2_gfx"
 
+include SDL2
+
 module Tetris
   WINDOW_TITLE = "tetris-sdl-c"
 
@@ -21,10 +23,9 @@ module Tetris
       @render_changed = false
 
       @window = LibSDL2.create_window(WINDOW_TITLE, LibSDL2::WINDOWPOS_CENTERED, LibSDL2::WINDOWPOS_CENTERED,
-          WINDOW_WIDTH, WINDOW_HEIGHT, LibSDL2::WINDOW_SHOWN)
-
-      if @window == nil
-        raise "\nSDL_CreateWindow Error:  %s\n" + String.new(LibSDL2.get_error)
+          WINDOW_WIDTH, WINDOW_HEIGHT, Window::Flags::SHOWN)
+      unless @window
+        raise "SDL_CreateWindow Error:  #{SDL2.error}"
       end
 
       # Create a renderer that will draw to the window, -1 specifies that we want to load whichever
@@ -34,13 +35,12 @@ module Tetris
       # SDL_RENDERER_ACCELERATED: We want to use hardware accelerated rendering
       # SDL_RENDERER_PRESENTVSYNC: We want the renderer's present function (update screen) to be
       # synchornized with the monitor's refresh rate
-      @render = LibSDL2.create_renderer(@window, -1, LibSDL2::RENDERER_ACCELERATED | LibSDL2::RENDERER_PRESENTVSYNC | LibSDL2::RENDERER_TARGETTEXTURE)
-
-      if @render == nil
-        raise "\nSDL_CreateRenderer Error:  %s\n" + String.new(LibSDL2.get_error)
+      @render = LibSDL2.create_renderer(@window, -1, Renderer::Flags::ACCELERATED | Renderer::Flags::PRESENTVSYNC | Renderer::Flags::TARGETTEXTURE)
+      unless @render
+        raise "SDL_CreateRenderer Error:  #{SDL2.error}"
       end
 
-      LibSDL2.renderer_set_blend_mode(@render, LibSDL2::BlendMode::BLEND)
+      LibSDL2.set_render_draw_blend_mode(@render, LibSDL2::BlendMode::BLEND)
 
       # texture for render context
       @display = LibSDL2.create_texture(@render, 0x16462004_u32, LibSDL2::TextureAccess::TARGET, WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -48,11 +48,7 @@ module Tetris
       LibSDL2.set_render_target(@render, @display)
 
       # Load font
-      @font = LibSDL2_TTF.open_font("Ubuntu-M.ttf", 20)
-
-      if @font == nil
-        raise "\nTTF_OpenFont Error:  %s\n" + String.new(LibSDL2.get_error)
-      end
+      raise "TTF_OpenFont Error:  #{SDL2.error}" unless @font = LibSDL2_TTF.open_font(File.join(File.dirname(__FILE__), "Ubuntu-M.ttf"), 20)
     end
 
     def update_render
@@ -60,7 +56,7 @@ module Tetris
         LibSDL2.set_render_target(@render, nil)
         LibSDL2.render_copy(@render, @display, nil, nil)
 
-        LibSDL2.renderer_present(@render)
+        LibSDL2.render_present(@render)
         @render_changed = false;
       end
     end
@@ -70,8 +66,8 @@ module Tetris
     end
 
     def clear_background
-      LibSDL2.renderer_set_color(@render, 204_u8, 192_u8, 179_u8, 255_u8)
-      LibSDL2.renderer_clear(@render)
+      LibSDL2.set_render_draw_color(@render, 204_u8, 192_u8, 179_u8, 255_u8)
+      LibSDL2.render_clear(@render)
     end
 
     def draw_block(x, y, color)
