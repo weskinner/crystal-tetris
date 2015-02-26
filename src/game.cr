@@ -17,19 +17,40 @@ module Tetris
     end
 
     def setup
+      @score = 0
+
       # set up SDL timer
       LibSDL2.remove_timer(@cb_timer) unless @cb_timer == 0
       @cb_timer = 0
 
       @tetromino_action = :none;
 
-      # Empty the playfield
-      ((PLAYFIELD_HEIGHT * PLAYFIELD_WIDTH)-1).downto(0) do |i|
-        @playfield[i] = ColorBlock::EMPTY
-      end
-
+      empty_playfield
       draw_playing_field
       spawn_tetromino
+    end
+
+    def spawn_tetromino
+      type = Piece::TETRA_O
+      case (1..7).to_a.sample
+      when 1
+        type = Piece::TETRA_I
+      when 2
+        type = Piece::TETRA_J
+      when 3
+        type = Piece::TETRA_L
+      when 4
+        type = Piece::TETRA_O
+      when 5
+        type = Piece::TETRA_S
+      when 6
+        type = Piece::TETRA_T
+      when 7
+        type = Piece::TETRA_Z
+      end
+
+      tetra_request = TetrominoMovement.new type, 0, 3, 0
+      setup unless render_current_tetromino(tetra_request)
     end
 
     def update(@tetromino_action)
@@ -37,36 +58,17 @@ module Tetris
         @cb_timer = LibSDL2.add_timer(1000_u32, ->(interval, param) { return (param as Game).auto_drop_timer(interval) }, self as Void*)
       end
 
-      # draw the scoreboard as needed
-      on_score_area = false;
-      (0..3).each do |i|
-        x_coord = i * 2
-        y_coord = x_coord + 1
-
-        _y = @current_tetromino_coords[y_coord]
-        if _y <= 2
-          on_score_area = true
-          break
-        end
-      end
-
       if on_score_area
-        # re-draw playfield area where score is located in
-        (0..PLAYFIELD_WIDTH * 2 - 1).each do |n|
-          x = n % PLAYFIELD_WIDTH;
-          y = n / PLAYFIELD_WIDTH;
-
-          set_playfield(x, y, get_playfield(x, y));
-        end
-
+        redraw_playfield_score_area
         draw_playing_field
-
-        # re-draw tetromino
         render_current_tetromino(@current_tetromino)
-
         render_score
       end
 
+      handle_input
+    end
+
+    def handle_input
       request = TetrominoMovement.new @current_tetromino
 
       # action from keyboard
@@ -106,6 +108,21 @@ module Tetris
       end
 
       @tetromino_action = :none
+    end
+
+    def on_score_area
+      on_score_area = false
+      (0..3).each do |i|
+        x_coord = i * 2
+        y_coord = x_coord + 1
+
+        _y = @current_tetromino_coords[y_coord]
+        if _y <= 2
+          on_score_area = true
+          break
+        end
+      end
+      return on_score_area
     end
 
     def lock_tetromino
@@ -175,36 +192,8 @@ module Tetris
       spawn_tetromino
     end
 
-    def draw_playing_field
-      @graphics.clear_background
-
-      ((PLAYFIELD_HEIGHT * PLAYFIELD_WIDTH)-1).downto(0) do |i|
-        set_playfield(i % PLAYFIELD_WIDTH, i / PLAYFIELD_WIDTH, @playfield[i])
-      end
-
-      @graphics.set_render_changed
-    end
-
     def render_score
-      # Show tetris score after all tetris operations are finished
-      text_color = LibSDL2::Color.new(r: 0x11_u8, g: 0x1F_u8, b: 0x3F_u8)
-      text_surface = LibSDL2_TTF.render_text_blended(@graphics.font, @score.to_s, text_color)
-      raise "TTF_Render Error #{LibSDL2.get_error}" if text_surface == nil
-
-      mtexture = LibSDL2.create_texture_from_surface(@graphics.render, text_surface)
-      raise "SDL_CreateTextureFromSurface Error #{LibSDL2.get_error}" if mtexture == nil
-
-      mWidth = text_surface.value.w;
-      mHeight = text_surface.value.h;
-
-      LibSDL2.free_surface(text_surface)
-
-      # render text
-      renderQuad = LibSDL2::Rect.new(x: (WINDOW_WIDTH - mWidth - 10), y: 10, w: mWidth, h: mHeight)
-
-      LibSDL2.render_copy_ex(@graphics.render, mtexture, nil, pointerof(renderQuad), 0_f64, nil, RenderFlip::NONE);
-
-      LibSDL2.destroy_texture(mtexture)
+      @graphics.render_text @score.to_s
     end
 
     def render_current_tetromino(tetra_request)
@@ -292,15 +281,6 @@ module Tetris
       interval
     end
 
-    private def get_playfield(x, y)
-      return @playfield[(y * PLAYFIELD_WIDTH) + x]
-    end
-
-    private def set_playfield(x, y, color)
-      @playfield[(y * PLAYFIELD_WIDTH) + x] = color
-      @graphics.draw_block(x, y, color)
-    end
-
     private def can_render_tetromino(tetra_request, block_render_queue)
       row = 0_u8
       col = 0_u8
@@ -347,27 +327,38 @@ module Tetris
       return true
     end
 
-    def spawn_tetromino
-      type = Piece::TETRA_O
-      case (1..7).to_a.sample
-      when 1
-        type = Piece::TETRA_I
-      when 2
-        type = Piece::TETRA_J
-      when 3
-        type = Piece::TETRA_L
-      when 4
-        type = Piece::TETRA_O
-      when 5
-        type = Piece::TETRA_S
-      when 6
-        type = Piece::TETRA_T
-      when 7
-        type = Piece::TETRA_Z
+    private def get_playfield(x, y)
+      return @playfield[(y * PLAYFIELD_WIDTH) + x]
+    end
+
+    private def set_playfield(x, y, color)
+      @playfield[(y * PLAYFIELD_WIDTH) + x] = color
+      @graphics.draw_block(x, y, color)
+    end
+
+    def draw_playing_field
+      @graphics.clear_background
+
+      ((PLAYFIELD_HEIGHT * PLAYFIELD_WIDTH)-1).downto(0) do |i|
+        set_playfield(i % PLAYFIELD_WIDTH, i / PLAYFIELD_WIDTH, @playfield[i])
       end
 
-      tetra_request = TetrominoMovement.new type, 0, 3, 0
-      setup unless render_current_tetromino(tetra_request)
+      @graphics.set_render_changed
+    end
+
+    def empty_playfield
+      ((PLAYFIELD_HEIGHT * PLAYFIELD_WIDTH)-1).downto(0) do |i|
+        @playfield[i] = ColorBlock::EMPTY
+      end
+    end
+
+    def redraw_playfield_score_area
+      (0..PLAYFIELD_WIDTH * 2 - 1).each do |n|
+        x = n % PLAYFIELD_WIDTH;
+        y = n / PLAYFIELD_WIDTH;
+
+        set_playfield(x, y, get_playfield(x, y));
+      end
     end
   end
 end

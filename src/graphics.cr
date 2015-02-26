@@ -12,8 +12,8 @@ module Tetris
   PLAYFIELD_HEIGHT = 22
   PLAYFIELD_WIDTH = 10
 
-  WINDOW_HEIGHT = 22 * ( 20 + 1) + 1
-  WINDOW_WIDTH = 22 * ( 20 + 1) + 1
+  WINDOW_HEIGHT = PLAYFIELD_HEIGHT * ( BLOCK_SIZE + 1) + 1
+  WINDOW_WIDTH = PLAYFIELD_WIDTH * ( BLOCK_SIZE + 1) + 1
 
   class Graphics
     property font
@@ -85,6 +85,27 @@ module Tetris
       LibSDL2_GFX.box_color(@render as Void*, x_tl, y_tl, x_br, y_br, color);
 
       set_render_changed 
+    end
+
+    def render_text(text)
+      # Show tetris score after all tetris operations are finished
+      text_color = LibSDL2::Color.new(r: 0x11_u8, g: 0x1F_u8, b: 0x3F_u8)
+      text_surface = LibSDL2_TTF.render_text_blended(@font, text, text_color)
+      raise "TTF_Render Error #{LibSDL2.get_error}" if text_surface == nil
+
+      mtexture = LibSDL2.create_texture_from_surface(@render, text_surface)
+      raise "SDL_CreateTextureFromSurface Error #{LibSDL2.get_error}" if mtexture == nil
+
+      mWidth = text_surface.value.w;
+      mHeight = text_surface.value.h;
+
+      LibSDL2.free_surface(text_surface)
+
+      # render text
+      render_quad = LibSDL2::Rect.new(x: (WINDOW_WIDTH - mWidth - 10), y: 10, w: mWidth, h: mHeight)
+      LibSDL2.render_copy_ex(@render, mtexture, nil, pointerof(render_quad), 0_f64, nil, RenderFlip::NONE);
+
+      LibSDL2.destroy_texture(mtexture)
     end
 
     def prerender

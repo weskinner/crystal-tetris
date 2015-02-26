@@ -30,7 +30,7 @@ def get_input
 end
 
 SDL2.run SDL2::INIT::EVERYTHING do
-  raise "TTF_Init Error: " + String.new(LibSDL2.get_error) unless LibSDL2_TTF.init() != -1
+  raise "TTF_Init Error: #{SDL2.error}" unless LibSDL2_TTF.init() != -1
   graphics = Tetris::Graphics.new
   tetris = Tetris::Game.new(graphics)
   tetris.setup
@@ -47,7 +47,6 @@ SDL2.run SDL2::INIT::EVERYTHING do
 
     SDL2.delay 16_u32
   end
-
 
   LibSDL2_TTF.quit
 end
