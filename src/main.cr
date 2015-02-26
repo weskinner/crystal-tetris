@@ -11,14 +11,14 @@ def get_input
     when EventType::QUIT
       return :quit
     when EventType::KEYDOWN
-      case e.key.key_sym.sym
-      when LibSDL2::Key::ESCAPE; return :quit
-      when LibSDL2::Key::S; return :down
-      when LibSDL2::Key::D; return :right
-      when LibSDL2::Key::A; return :left
-      when LibSDL2::Key::W; return :rotate
-      when LibSDL2::Key::R; return :restart
-      when LibSDL2::Key::SPACE; return :drop
+      case e.key.key_sym.scan_code
+      when Scancode::ESCAPE; return :quit
+      when Scancode::DOWN, Scancode::S; return :down
+      when Scancode::RIGHT, Scancode::D; return :right
+      when Scancode::LEFT, Scancode::A; return :left
+      when Scancode::UP, Scancode::W; return :rotate
+      when Scancode::R; return :restart
+      when Scancode::SPACE; return :drop
       end
     when EventType::KEYUP
       return :none
