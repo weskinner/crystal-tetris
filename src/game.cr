@@ -5,10 +5,7 @@ module Tetris
     def initialize(@graphics)
       @cb_timer = 0
       @playfield = Array(UInt32).new PLAYFIELD_HEIGHT * PLAYFIELD_WIDTH, ColorBlock::EMPTY
-      @tetromino_queue_size = 7
-      @tetromino_queue = [] of Tetromino
       @tetromino_action = :none
-      @current_tetromino_coords = Array(UInt8).new(8, 0_u8)
       @ghost_tetromino_coords = Array(UInt8).new(8, 0_u8)
       @current_tetromino = TetrominoMovement.new Piece::TETRA_O, 0, 3, 0
       @lock_delay_count = 0
@@ -49,8 +46,8 @@ module Tetris
         type = Piece::TETRA_Z
       end
 
-      tetra_request = TetrominoMovement.new type, 0, 3, 0
-      setup unless render_current_tetromino(tetra_request)
+      @current_tetromino.reset(type)
+      setup unless render_current_tetromino
     end
 
     def update(@tetromino_action)
@@ -61,7 +58,7 @@ module Tetris
       if on_score_area
         redraw_playfield_score_area
         draw_playing_field
-        render_current_tetromino(@current_tetromino)
+        render_current_tetromino
         render_score
       end
 
@@ -69,7 +66,7 @@ module Tetris
     end
 
     def handle_input
-      request = TetrominoMovement.new @current_tetromino
+      request = TetrominoRequest.new
 
       # action from keyboard
       case @tetromino_action
@@ -85,7 +82,8 @@ module Tetris
         render_current_tetromino(request)
       when :drop
         request.y += 1
-        (request.y += 1) while render_current_tetromino(request)
+        while render_current_tetromino(request)
+        end
         lock_tetromino
       when :down
         request.y += 1
@@ -112,36 +110,24 @@ module Tetris
 
     def on_score_area
       on_score_area = false
-      (0..3).each do |i|
-        x_coord = i * 2
-        y_coord = x_coord + 1
-
-        _y = @current_tetromino_coords[y_coord]
-        if _y <= 2
+      @current_tetromino.coords do |x,y|
+        if y <= 2
           on_score_area = true
           break
         end
       end
+
       return on_score_area
     end
 
     def lock_tetromino
       @lock_delay_count = 0
 
-      (0..3).each do |i|
-        x_coord = i * 2
-        y_coord = x_coord + 1
-
-        _x = @current_tetromino_coords[x_coord]
-        _y = @current_tetromino_coords[y_coord]
-
-        @current_tetromino_coords[x_coord] = 0_u8
-        @current_tetromino_coords[y_coord] = 0_u8
-        @ghost_tetromino_coords[x_coord] = 0_u8
-        @ghost_tetromino_coords[y_coord] = 0_u8
- 
-        set_playfield(_x, _y, @current_tetromino.type.color)
+      @current_tetromino.coords do |x,y|
+        set_playfield(x, y, @current_tetromino.type.color)
       end
+      @current_tetromino.reset
+      @ghost_tetromino_coords = Array(UInt8).new(8, 0_u8)
 
       row_to_copy_to = -1;
       completed_lines = 0;
@@ -196,27 +182,29 @@ module Tetris
       @graphics.render_text @score.to_s
     end
 
-    def render_current_tetromino(tetra_request)
-      ghost = Tetromino.new tetra_request.type
+    def render_current_tetromino(tetra_request = TetrominoRequest.new)
+      ghost = Tetromino.new @current_tetromino.type
 
       # change alpha to ~50%
       ghost.color = ghost.color & 0x00FFFFFF;
       ghost.color = ghost.color | 0x66000000;
 
-      ghost_request = TetrominoMovement.new tetra_request
-      ghost_request.type = ghost
+      ghost_movement = TetrominoMovement.new @current_tetromino
+      ghost_movement.type = ghost
+
+      ghost_request = TetrominoRequest.new 0, 1, 0
 
       # render ghost tetromino
-      while render_tetromino(ghost_request, @ghost_tetromino_coords)
-        ghost_request.y += 1
+      while render_tetromino(ghost_movement, ghost_request)
+        ghost_movement.update ghost_request
       end
 
       # change alpha to 90%
-      tetra_request.type.color = tetra_request.type.color & 0x00FFFFFF;
-      tetra_request.type.color = tetra_request.type.color | 0xE5000000;
+      tetra_request.color = @current_tetromino.type.color & 0x00FFFFFF;
+      tetra_request.color = tetra_request.color | 0xE5000000;
 
-      if render_tetromino(tetra_request, @current_tetromino_coords)
-        @current_tetromino = tetra_request
+      if render_tetromino(@current_tetromino, tetra_request)
+        @current_tetromino.update tetra_request
         return true
       end
 
@@ -225,103 +213,32 @@ module Tetris
 
     #  render tetromino movement request
     #  returns true if tetromino is rendered succesfully; false otherwise
-    def render_tetromino(tetra_request, current_coords)
-      #  simple 'queue' to store coords of blocks to render on playing field.
-      #  Each tetromino has 4 blocks with total of 4 coordinates.
-      # 
-      #  To access a coord, if 0 <= i < 4, then
-      #       x = i * 2, y = x + 1
-      # 
-      block_render_queue = Array(UInt8).new(8, 0_u8)
-
-      return false unless can_render_tetromino(tetra_request, block_render_queue)
+    def render_tetromino(tetromino, request)
+      (future = TetrominoMovement.new(tetromino)).update(request)
+      return false unless can_render_tetromino(future)
 
       #  clear old tetromino position
-      (0..3).each do |i|
-        x_coord = i * 2
-        y_coord = x_coord + 1
-
-        _x = current_coords[x_coord]
-        _y = current_coords[y_coord]
-
-        @graphics.draw_block(_x, _y, ColorBlock::EMPTY)
+      tetromino.coords do |x,y|
+        @graphics.draw_block(x, y, ColorBlock::EMPTY)
       end
 
       #  render new tetromino blocks
-      (0..3).each do |i|
-        x_coord = i * 2
-        y_coord = x_coord + 1
-
-        #  store and draw new tetromino position
-        _x = block_render_queue[x_coord]
-        _y = block_render_queue[y_coord]
-
-        current_coords[x_coord] = _x
-        current_coords[y_coord] = _y
-
-        @graphics.draw_block(_x, _y, tetra_request.type.color)
+      future.coords do |x,y|
+        @graphics.draw_block(x, y, tetromino.type.color)
       end
 
       return true
     end
 
-    def auto_drop_timer(interval)
-      event = LibSDL2::Event.new
-      userevent = LibSDL2::UserEvent.new
+    private def can_render_tetromino(tetromino)
+      tetromino.coords do |_x,_y|
+        if (_x < 0) || (_x >= PLAYFIELD_WIDTH) ||
+          (_y < 0) || (_y >= PLAYFIELD_HEIGHT) ||
+          get_playfield(_x, _y) != ColorBlock::EMPTY
 
-      userevent.type = EventType::USEREVENT;
-      userevent.code = 0;
-      userevent.data1 = Pointer(Void).null;
-      userevent.data2 = Pointer(Void).null;
-
-      event.type = EventType::USEREVENT;
-      event.user = userevent;
-
-      LibSDL2.push_event(pointerof(event))
-      interval
-    end
-
-    private def can_render_tetromino(tetra_request, block_render_queue)
-      row = 0_u8
-      col = 0_u8
-
-      piece = tetra_request.type.rotation[tetra_request.rotation];
-      x = tetra_request.x.to_u8
-      y = tetra_request.y.to_u8;
-
-      #  loop through tetramino data
-      i = 0
-      bit = 0x8000_u16
-      while bit > 0 && i < 8
-        if (piece & bit) != 0
-            _x = (x + col).to_u8
-            _y = (y + row).to_u8
-
-            #  bounds check
-            if (_x < 0) || (_x >= PLAYFIELD_WIDTH) ||
-              (_y < 0) || (_y >= PLAYFIELD_HEIGHT) ||
-              get_playfield(_x, _y) != ColorBlock::EMPTY
-
-              #  unable to render tetramino block
-              return false
-              break
-            else
-              # puts block_render_queue
-              if block_render_queue != nil
-                  block_render_queue[i * 2] = _x;
-                  block_render_queue[i * 2 + 1] = _y;
-              end
-
-              i += 1
-            end
+          #  unable to render tetramino block
+          return false
         end
-
-        #  cycle col between 0 to 3
-        #  if col is 0 then increment row
-        col = (col + 1) % 4
-        row = row + 1 if col == 0
-
-        bit = bit >> 1
       end
 
       return true
@@ -359,6 +276,22 @@ module Tetris
 
         set_playfield(x, y, get_playfield(x, y));
       end
+    end
+
+    def auto_drop_timer(interval)
+      event = LibSDL2::Event.new
+      userevent = LibSDL2::UserEvent.new
+
+      userevent.type = EventType::USEREVENT;
+      userevent.code = 0;
+      userevent.data1 = Pointer(Void).null;
+      userevent.data2 = Pointer(Void).null;
+
+      event.type = EventType::USEREVENT;
+      event.user = userevent;
+
+      LibSDL2.push_event(pointerof(event))
+      interval
     end
   end
 end
