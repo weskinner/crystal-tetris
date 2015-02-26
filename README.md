@@ -16,7 +16,6 @@ brew install sdl2 sdl2_gfx sdl2_ttf
 
 ## How to Build
 ```
-cd src/
 crystal deps
-crystal main.cr
+crystal tetris.cr
 ```
