@@ -59,7 +59,6 @@ SDL2.run SDL2::INIT::EVERYTHING do
       frames_ticks = now_ticks
       frames = 0
     end
-    SDL2.delay 16_u32
   end
 
   LibSDL2_TTF.quit
