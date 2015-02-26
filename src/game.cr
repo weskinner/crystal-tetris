@@ -8,6 +8,7 @@ module Tetris
       @tetromino_action = :none
       @ghost_tetromino_coords = Array(UInt8).new(8, 0_u8)
       @current_tetromino = TetrominoMovement.new Piece::TETRA_O, 0, 3, 0
+      @ghost_movement = TetrominoMovement.new @current_tetromino
       @lock_delay_count = 0
       @lock_delay_threshold = 2
       @score = 0
@@ -183,20 +184,26 @@ module Tetris
     end
 
     def render_current_tetromino(tetra_request = TetrominoRequest.new)
+      #clear old ghost
+      @ghost_movement.coords do |x,y|
+        @graphics.draw_block(x, y, ColorBlock::EMPTY)
+      end
+
       ghost = Tetromino.new @current_tetromino.type
 
       # change alpha to ~50%
       ghost.color = ghost.color & 0x00FFFFFF;
       ghost.color = ghost.color | 0x66000000;
 
-      ghost_movement = TetrominoMovement.new @current_tetromino
-      ghost_movement.type = ghost
+      @ghost_movement = TetrominoMovement.new @current_tetromino
+      @ghost_movement.type = ghost
+      @ghost_movement.update tetra_request
 
       ghost_request = TetrominoRequest.new 0, 1, 0
 
       # render ghost tetromino
-      while render_tetromino(ghost_movement, ghost_request)
-        ghost_movement.update ghost_request
+      while render_tetromino(@ghost_movement, ghost_request)
+        @ghost_movement.update ghost_request
       end
 
       # change alpha to 90%

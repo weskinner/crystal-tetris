@@ -89,7 +89,7 @@ module Tetris
       row = 0_u8
       col = 0_u8
 
-      piece = type.rotation[tetra_request.rotation];
+      piece = type.rotation[@rotation];
       x = @x
       y = @y
 
@@ -133,8 +133,8 @@ module Tetris
 
     def reset(type = Piece::TETRA_I)
       @type = type
-      @x = 0
-      @y = 3
+      @x = 3
+      @y = 0
       @rotation = 0
       @current_coords = Array(UInt8).new(8, 0_u8)
     end
