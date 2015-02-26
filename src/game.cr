@@ -67,8 +67,6 @@ module Tetris
         render_score
       end
 
-
-
       request = TetrominoMovement.new @current_tetromino
 
       # action from keyboard
@@ -350,40 +348,7 @@ module Tetris
     end
 
     def spawn_tetromino
-      # current_queue_index++;
-      # if(current_queue_index >= tetromino_queue_size) {
-      #     current_queue_index = 0;
-
-      #       apply shuffle algorithm
-      #     shuffle(tetromino_queue, tetromino_queue_size, sizeof(uint8_t));
-      # }
-
-      # Tetromino type;
       type = Piece::TETRA_O
-
-      # switch(tetromino_queue[current_queue_index]) {
-      #     case 1:
-      #         type = TETRA_I;
-      #     break;
-      #     case 2:
-      #         type = TETRA_J;
-      #     break;
-      #     case 3:
-      #         type = TETRA_L;
-      #     break;
-      #     case 4:
-      #         type = TETRA_O;
-      #     break;
-      #     case 5:
-      #         type = TETRA_S;
-      #     break;
-      #     case 6:
-      #         type = TETRA_T;
-      #     break;
-      #     case 7:
-      #         type = TETRA_Z;
-      #     break;
-      # }
       case (1..7).to_a.sample
       when 1
         type = Piece::TETRA_I
@@ -401,23 +366,8 @@ module Tetris
         type = Piece::TETRA_Z
       end
 
-      # Tetromino_Movement tetra_request = {
-      #     type,
-      #     0,
-      #     3, 0
-      # };
       tetra_request = TetrominoMovement.new type, 0, 3, 0
-
-      # if(!render_current_tetromino(tetra_request)) {
-
-      #       Reset the game
-      #     initTetris();
-      # }
       setup unless render_current_tetromino(tetra_request)
-    end
-
-    private def shuffle
-      #TODO
     end
   end
 end
