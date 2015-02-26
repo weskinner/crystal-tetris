@@ -27,3 +27,4 @@ tetris_toy
 .swp
 .crystal/
 libs/
+.deps/
