@@ -88,7 +88,7 @@ module Tetris
 
     def update(@tetromino_action)
       if @cb_timer == 0
-        @cb_timer = LibSDL2.add_timer(100_u32, ->(interval, param) { return (param as Game).auto_drop_timer(interval) }, self as Void*)
+        @cb_timer = LibSDL2.add_timer(1000_u32, ->(interval, param) { return (param as Game).auto_drop_timer(interval) }, self as Void*)
       end
 
       # draw the scoreboard as needed
