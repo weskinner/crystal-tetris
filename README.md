@@ -1,6 +1,6 @@
 # crystal-tetris
 port of Dashed/tetris-sdl-c to crystal-lang
-
+![](gameplay.png)
 
 ## Prerequisites
 * libsdl2
