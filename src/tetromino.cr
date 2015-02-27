@@ -1,6 +1,6 @@
 module Tetris
   module ColorBlock
-    EMPTY = 0xFFB3C0CC_u32
+    EMPTY = 0xFF4f4c42_u32
     TEAL = 0xFFFFDB7F_u32
     BLUE = 0xFFD97400_u32
     ORANGE = 0xFF1B85FF_u32

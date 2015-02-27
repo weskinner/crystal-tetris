@@ -66,7 +66,7 @@ module Tetris
     end
 
     def clear_background
-      LibSDL2.set_render_draw_color(@render, 204_u8, 192_u8, 179_u8, 255_u8)
+      LibSDL2.set_render_draw_color(@render, 0x4f_u8, 0x4c_u8, 0x42_u8, 255_u8)
       LibSDL2.render_clear(@render)
     end
 
