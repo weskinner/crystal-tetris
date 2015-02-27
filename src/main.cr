@@ -2,6 +2,7 @@ require "sdl2"
 require "./lib_sdl2_ttf"
 require "./graphics"
 require "./game"
+require "./fps"
 
 include SDL2
 
@@ -35,13 +36,10 @@ SDL2.run SDL2::INIT::EVERYTHING do
   tetris = Tetris::Game.new(graphics)
   tetris.setup
 
+  fps = Fps.new
   quit = false
-  last_ticks = SDL2.ticks
-  frames_ticks = last_ticks
-  frames = 0
   until quit
-    now_ticks = SDL2.ticks
-    dt = now_ticks - last_ticks
+    fps.start
 
     graphics.prerender
 
@@ -51,14 +49,7 @@ SDL2.run SDL2::INIT::EVERYTHING do
     tetris.update action
     graphics.update_render
 
-    last_ticks = now_ticks
-    frames += 1
-
-    if now_ticks - frames_ticks > 1000
-      puts "FPS: #{frames.to_f / (now_ticks - frames_ticks) * 1000}"
-      frames_ticks = now_ticks
-      frames = 0
-    end
+    fps.stop
   end
 
   LibSDL2_TTF.quit
