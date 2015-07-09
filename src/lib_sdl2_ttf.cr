@@ -1,7 +1,6 @@
 @[Link("SDL2_ttf")]
 lib LibSDL2_TTF
-  struct Font
-  end
+  alias Font = Void*
 
   fun init = TTF_Init() : Int32
   fun quit = TTF_Quit() : Void
